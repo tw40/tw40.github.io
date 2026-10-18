@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14532d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Range Buddy</title>
+<style>
+  :root{--g:#14532d;--g2:#166534;--bg:#f4f7f2;--card:#fff;--ink:#1c1c1c;--mute:#666}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font:17px/1.45 -apple-system,system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:var(--g);color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0}
+  header h1{font-size:20px;margin:0}
+  header button{background:none;border:1px solid #fff6;color:#fff;border-radius:8px;padding:6px 10px;font-size:14px}
+  main{max-width:520px;margin:0 auto;padding:16px}
+  h2{font-size:22px;margin:8px 0 14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .btn{display:block;width:100%;border:0;border-radius:14px;padding:16px 12px;font-size:18px;font-weight:600;background:var(--card);color:var(--ink);box-shadow:0 1px 3px #0002;text-align:left}
+  .btn small{display:block;font-weight:400;font-size:13px;color:var(--mute);margin-top:2px}
+  .btn.primary{background:var(--g2);color:#fff;text-align:center}
+  .btn.good{background:#dcfce7}
+  .btn.ghost{background:transparent;box-shadow:none;color:var(--g2);text-align:center;font-weight:500}
+  .seg{display:flex;gap:8px;margin-bottom:18px}
+  .seg button{flex:1;border:2px solid var(--g2);background:#fff;color:var(--g2);border-radius:12px;padding:12px;font-size:16px;font-weight:600}
+  .seg button.on{background:var(--g2);color:#fff}
+  .card{background:var(--card);border-radius:16px;padding:18px;box-shadow:0 1px 3px #0002;margin-bottom:14px}
+  .tag{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);margin:0 0 4px}
+  .cause{font-size:20px;font-weight:700;margin:0 0 12px}
+  .cue{font-size:19px;background:#fef9c3;border-radius:10px;padding:12px;margin:0 0 12px}
+  .drill{margin:0;color:#333}
+  .row{display:flex;gap:10px;margin-top:10px}
+  .row .btn{text-align:center}
+  .stats li{margin:4px 0}
+  .muted{color:var(--mute);font-size:14px}
+  label{font-weight:600;display:block;margin:6px 0}
+</style>
+</head>
+<body>
+<header><h1>⛳ Range Buddy</h1><button id="sessBtn">Session</button></header>
+<main id="app"></main>
+<script>
+// Content: Marty's golf-tree-content-v0.1 (standard range advice, not pro-verified).
+// Written for righties; {R}/{L}/{lead}/{trail} flip for lefties.
+const MISSES={
+ slice:{name:"Slice",desc:"Curves hard {R}",pro:"I slice. Ball curves {R}, sometimes starts {L}.",causes:[
+  {c:"Open clubface",k:"Does it start straight or {R}, then curve more {R}? Can you see only 1 knuckle on your {lead} hand at address?",cue:"Turn both hands slightly {R} until you see 2–3 knuckles.",d:"Half swings, with the toe of the club pointing at the sky at waist height on both sides."},
+  {c:"Over the top (out-to-in path)",k:"Does the ball start {L}, then curve {R}? Do divots point {L}?",cue:"Start down with your hips, and feel the club drop behind you before you swing.",d:"Put a headcover about 4 inches outside and 6 inches behind the ball, then swing without touching it."},
+  {c:"Aimed {L} / open shoulders",k:"Lay a club along your toes. Is it pointing {L} of the target?",cue:"Set feet, hips, and shoulders parallel to the target line.",d:"Alignment stick on the ground for 10 balls."}]},
+ hook:{name:"Hook",desc:"Curves hard {L}",pro:"I hook. Ball curves hard {L}.",causes:[
+  {c:"Closed clubface / strong grip",k:"Does it start straight or {L}, then curve more {L}? Can you see 4 knuckles on your {lead} hand?",cue:"Turn hands slightly {L} until you see 2–3.",d:"10 half swings with the new grip, aiming for straight."},
+  {c:"Hands flip at impact",k:"Does your chest stop turning while your hands keep going?",cue:"Keep turning your chest through and finish facing the target.",d:"Hold your finish for 3 seconds every swing."},
+  {c:"Too inside-out",k:"Does the ball start {R}, then hook {L}?",cue:"Feel the club swing more {L} after impact.",d:"Swing toward your miss: feel the club swing hard {L} through impact, almost sawing across the ball."}]},
+ fat:{name:"Fat / Duff",desc:"Hits the ground first",pro:"I hit it fat. Club hits the ground before the ball.",causes:[
+  {c:"Weight stuck on back foot",k:"Is your weight still on your {trail} foot at the finish?",cue:"Finish with your belt buckle at the target and your {trail} heel up.",d:"Step-through drill: walk your {trail} foot forward after impact."},
+  {c:"Ball position too far forward",k:"With irons, is the ball near your {lead} heel?",cue:"Irons go middle of your stance.",d:"Put a tee at center stance as a guide."},
+  {c:"Dipping, or arms racing ahead of the body",k:"Does your head drop, or are you swinging hard with just the arms?",cue:"Turn your body through and let the arms follow, with hands slightly ahead of the ball.",d:"Lay a folded towel about 6 inches behind the ball and hit the ball without touching it. Short irons only."}]},
+ thin:{name:"Thin / Top",desc:"Low runner or hits the top",pro:"I hit it thin or top it.",causes:[
+  {c:"Standing up through impact",k:"Does your chest or head rise as you swing down?",cue:"Keep your chest over the ball until after impact.",d:"Slow half swings, staying in your posture."},
+  {c:"Trying to lift the ball",k:"Are you scooping to help it up?",cue:"Hit down and let the club's loft lift it.",d:"Put a tee 2 inches in front of the ball and clip it after the ball."},
+  {c:"Chicken wing (lead arm bends and pulls in)",k:"Does your {lead} elbow fold and point out at impact?",cue:"Keep both arms long through the ball and brush the grass.",d:"Practice swings that brush the grass or take a small divot just in front of the ball."}]},
+ shank:{name:"Shank",desc:"Shoots sharply {R}",pro:"I shank it. Ball shoots sharply {R} off the hosel.",causes:[
+  {c:"Weight on your toes",k:"Falling toward the ball?",cue:"Keep your weight in the middle of your feet, or address the ball with your toes slightly lifted.",d:"Put two balls side by side, address the inner one, and hit it without touching the outer one."},
+  {c:"Standing too close",k:"Your hands should hang about a fist-width from your thighs.",cue:"Back up an inch and let your arms hang, not reach.",d:"Put a tee just outside the toe of the club and miss it."},
+  {c:"Over the top (out-to-in path)",k:"Do your divots point {L}, and do your other misses pull or slice?",cue:"Start down with your hips and keep the grip end close to your body.",d:"Put a headcover 1–2 inches outside the ball and swing from the inside without hitting it."}]}
+};
+const KEY="rangebuddy.v2";
+let S=JSON.parse(localStorage.getItem(KEY)||"null")||{hand:null,sessions:[]};
+const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+const app=document.getElementById("app");
+function sess(){const today=new Date().toDateString();let s=S.sessions[S.sessions.length-1];if(!s||s.day!==today){s={day:today,taps:[],fixes:[],feedback:""};S.sessions.push(s);save()}return s}
+function fill(t){const L=S.hand==="L";return t.replaceAll("{R}",L?"left":"right").replaceAll("{L}",L?"right":"left").replaceAll("{lead}",L?"right":"left").replaceAll("{trail}",L?"left":"right")}
+function h(x){app.innerHTML=x;window.scrollTo(0,0)}
+const $=id=>document.getElementById(id);
+
+function setup(){
+ h(`<h2>Righty or lefty?</h2><div class="seg"><button data-h="R" class="${S.hand==='R'?'on':''}">Righty</button><button data-h="L" class="${S.hand==='L'?'on':''}">Lefty</button></div>
+ <p class="muted">I'll remember this on this phone.</p>`);
+ app.querySelectorAll("[data-h]").forEach(b=>b.onclick=()=>{S.hand=b.dataset.h;save();home()});
+}
+function home(){
+ h(`<h2>What did the ball do?</h2><div class="grid">
+ ${Object.entries(MISSES).map(([k,m])=>`<button class="btn" data-m="${k}">${m.name}<small>${fill(m.desc)}</small></button>`).join("")}
+ <button class="btn good" data-m="good">Good one 🎉<small>Nice</small></button></div>
+ <p class="muted" style="text-align:center;margin-top:14px">Tap after each ball. One fix at a time.</p>`);
+ app.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>tap(b.dataset.m));
+}
+function tap(m){
+ const s=sess();s.taps.push({t:Date.now(),m});save();
+ if(m==="good"){h(`<div class="card" style="text-align:center"><h2>Nice one! 🎉</h2><p>Remember that feel. Do it again.</p></div><button class="btn primary" id="n">Next ball</button>`);$("n").onclick=home;return}
+ showCause(m,0);
+}
+function showCause(m,i){
+ const M=MISSES[m],f=M.causes[i];
+ h(`<div class="card"><p class="tag">${M.name} · likely cause ${i+1} of 3</p><p class="cause">${fill(f.c)}</p>
+ <p class="tag">Quick check: does this sound like you?</p><p class="drill" style="margin-bottom:12px">${fill(f.k)}</p>
+ <p class="tag">Cue</p><p class="cue">${fill(f.cue)}</p>
+ <p class="tag">Drill</p><p class="drill">${fill(f.d)}</p></div>
+ <button class="btn primary" id="go">Try it on your next 3 balls</button>
+ <button class="btn ghost" id="skip">Doesn't sound like me, next cause</button>`);
+ $("go").onclick=()=>better(m,i);
+ $("skip").onclick=()=>next(m,i);
+}
+function better(m,i){
+ h(`<div class="card" style="text-align:center"><p class="tag">${MISSES[m].name} · cause ${i+1}</p><h2>Hit 3 balls with the cue.</h2><p>Then come back here.</p></div>
+ <h2 style="text-align:center">Better?</h2><div class="row"><button class="btn primary" id="y">Yes 👍</button><button class="btn" id="no" style="text-align:center">No 👎</button></div>`);
+ const rec=ok=>{const s=sess();s.fixes.push({t:Date.now(),m,i,ok});save()};
+ $("y").onclick=()=>{rec(true);h(`<div class="card" style="text-align:center"><h2>Nice, keep that one. 🎉</h2><p class="muted">${fill(MISSES[m].causes[i].cue)}</p></div><button class="btn primary" id="n">Back to hitting</button>`);$("n").onclick=home};
+ $("no").onclick=()=>{rec(false);next(m,i)};
+}
+function next(m,i){
+ if(i<2)return showCause(m,i+1);
+ const M=MISSES[m],tried=M.causes.map(c=>fill(c.c)).join(", ");
+ const note=`${fill(M.pro)} I tried checking: ${tried}. None of those fixed it.`;
+ h(`<div class="card"><h2>Might be worth a quick lesson.</h2><p class="tag">Here's what to tell the pro</p><p class="cue">${note}</p></div>
+ <button class="btn primary" id="cp">Copy this</button><button class="btn ghost" id="n">Back to hitting</button>`);
+ $("cp").onclick=async()=>{try{await navigator.clipboard.writeText(note);$("cp").textContent="Copied!"}catch(e){}};
+ $("n").onclick=home;
+}
+function session(){
+ const s=sess(),c={};s.taps.forEach(x=>c[x.m]=(c[x.m]||0)+1);
+ const nm=k=>k==="good"?"Good one":MISSES[k].name;
+ const counts=Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<li>${nm(k)}: ${v}</li>`).join("")||"<li>Nothing yet</li>";
+ const helped=s.fixes.filter(f=>f.ok).map(f=>`<li>${MISSES[f.m].name}: ${fill(MISSES[f.m].causes[f.i].c)} 👍</li>`).join("")||"<li>None yet</li>";
+ const n=S.sessions.length;
+ h(`<h2>This session</h2><div class="card"><p class="tag">Misses</p><ul class="stats">${counts}</ul>
+ <p class="tag" style="margin-top:12px">Fixes that helped</p><ul class="stats">${helped}</ul>
+ <p class="muted">Session ${n} on this phone.</p></div>
+ <div class="card"><p class="tag">Send feedback to Te</p><textarea id="fb" rows="4" style="width:100%;font:inherit;border:1px solid #ccc;border-radius:10px;padding:10px" placeholder="What helped? What was confusing?">${s.feedback||""}</textarea>
+ <button class="btn primary" id="send" style="margin-top:10px">Send feedback</button></div>
+ <div class="row"><button class="btn ghost" id="b">Back</button><button class="btn ghost" id="hd">Righty/Lefty</button></div>`);
+ $("b").onclick=home;$("hd").onclick=setup;
+ $("send").onclick=async()=>{
+  s.feedback=$("fb").value;save();
+  const txt=`Range Buddy feedback (session ${n}, ${s.day})\nMisses: ${Object.entries(c).map(([k,v])=>nm(k)+" "+v).join(", ")||"none"}\nHelped: ${s.fixes.filter(f=>f.ok).map(f=>MISSES[f.m].name+" #"+(f.i+1)).join(", ")||"none"}\nDidn't help: ${s.fixes.filter(f=>!f.ok).map(f=>MISSES[f.m].name+" #"+(f.i+1)).join(", ")||"none"}\nNotes: ${s.feedback||"-"}`;
+  try{if(navigator.share)await navigator.share({text:txt});else{await navigator.clipboard.writeText(txt);$("send").textContent="Copied! Paste it in a text to Te"}}catch(e){}
+ };
+}
+$("sessBtn").onclick=session;
+S.hand?home():setup();
+</script>
+</body>
+</html>
